@@ -9,6 +9,8 @@ Jently is a Ruby app that makes it possible for Jenkins to run tests on open pul
 
 - Jently uses the {Github Commit Status API}[https://github.com/blog/1227-commit-status-api] to update the status of the last commit of a pull request. Whenever possible, a status update contains a link to the Jenkins job that was run to ascertain the correct status.
 
+- Jently has the ablility to inly run tests when a specific comment is made in Github on open pull requests.
+
 == Getting Started
 
 There are 5 small steps involved in getting Jently up and running. These steps assume you have a recent version of Ruby installed and have sufficient access to your Jenkins CI so as to add builds.
@@ -40,6 +42,13 @@ You'll need to clone the Jently repository to your hard drive in order to get st
 === Modifying the configuration file
 
 A configuration file can be found in the /config directory. There are a few configuration details that you will need to specify before running Jently. The comments in the file should hopefully make it easy to get everything set up right.
+
+=== Running Jently per pull request
+
+By default this Jently version only will run if a specific comment is left in open pull requests. If you would like Jently to test each time a pull request is created or updated you need to do the following.
+
+- open jently.rb and comment out line 12.
+- you then should uncomment line 15.
 
 === Running Jently
 
