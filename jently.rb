@@ -7,11 +7,16 @@ def test_pull_request(pull_request_id)
   begin
     config = ConfigFile.read
     pull_request = Github.get_pull_request(pull_request_id)
-
-    is_test_required = PullRequestsData.is_test_required(pull_request)
+    #Uncomment the line below if you want to trigger a build from a 
+    #when a specific pull request comment is made on open pull requests.
+    is_comment_valid = Github.get_pull_request_comment(pull_request_id)
+    #Uncomment the line below and comment out the line above if you want to 
+    #trigger a build when a pull request is created.
+    #is_comment_valid = 'true'
+    is_test_required = PullRequestsData.is_test_required(pull_request, is_comment_valid)
     PullRequestsData.update(pull_request)
 
-    if is_test_required
+    if is_test_required && is_comment_valid 
       if pull_request[:mergeable] == false
         Github.set_pull_request_status(pull_request_id, {:status => 'failure', :description => 'Unmergeable pull request.'})
       end
@@ -29,7 +34,7 @@ def test_pull_request(pull_request_id)
           Github.set_pull_request_status(pull_request_id, {:status => 'pending', :description => 'Started work on pull request.'})
           job_id = Jenkins.start_job
           state = Jenkins.wait_on_job(job_id)
-          Github.set_pull_request_status(pull_request_id, state)
+          Github.set_pull_request_status(pull_request_id, state, job_id)
         end
 
         timeout = thr.join(config[:jenkins_job_timeout_seconds]).nil?

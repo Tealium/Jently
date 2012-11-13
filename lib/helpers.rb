@@ -79,7 +79,7 @@ module PullRequestsData
     write(data)
   end
 
-  def PullRequestsData.is_test_required(pull_request)
+  def PullRequestsData.is_test_required(pull_request, is_comment_valid)
     data = read
     is_new = !data.has_key?(pull_request[:id])
     is_merged = pull_request[:merged]
@@ -96,7 +96,10 @@ module PullRequestsData
     was_updated = false
     was_updated = (was_updated || data[pull_request[:id]][:head_sha] != pull_request[:head_sha]) if !is_new
     was_updated = (was_updated || data[pull_request[:id]][:base_sha] != pull_request[:base_sha]) if !is_new
+    
+    comment_valid = false
+    comment_valid = comment_valid || pull_request[:status] != 'pending' && is_comment_valid
 
-    is_test_required = !is_merged && (is_new || has_invalid_status || (has_valid_status && was_updated))
+    is_test_required = !is_merged && (is_new || has_invalid_status || comment_valid || (has_valid_status && was_updated))
   end
 end

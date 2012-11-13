@@ -37,3 +37,11 @@
 # Here you can specify the name of this branch. You'll want to give it a name that
 # people are unlikely to use for their feature branches.
 :testing_branch_name: jently_pull_request_testing
+
+#This user will comment in the pull request when they want Jenkins to build out the
+#specific pull request onto the QA Server
+:tester_username: github_login_of_tester
+
+#This is the comment the the tester needs to leave as a comment on the speficic pull request
+#that they would like to test.
+:tester_comment: git_comment
