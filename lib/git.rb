@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'systemu'
 require './lib/helpers.rb'
 

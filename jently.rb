@@ -1,3 +1,4 @@
+require 'rubygems'
 require './lib/git.rb'
 require './lib/github.rb'
 require './lib/jenkins.rb'

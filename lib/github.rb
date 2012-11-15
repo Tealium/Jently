@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'octokit'
 require './lib/helpers.rb'
 
@@ -96,7 +97,7 @@ module Github
       retry
     end
   end
-  
+
   def Github.set_pull_request_comment(pull_request_id, state_status, job_id)
     begin
       config = ConfigFile.read

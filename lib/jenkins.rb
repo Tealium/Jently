@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'faraday'
 require './lib/helpers.rb'
 
