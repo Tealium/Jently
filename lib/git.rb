@@ -15,12 +15,13 @@ module Git
     repository_dir = Repository.get_dir
     cmd = <<-GIT
       cd #{repository_dir} &&
-      #{admin} git clone https://#{config[:github_login]}:#{config[:github_password]}@github.com/#{repository_id}.git
+      #{admin} git clone git@github.com:#{repository_id}.git
     GIT
     puts 'Cloning repository ...'
     status, stdout, stderr = systemu(cmd)
-    Logger.log("Cloning repository - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
+    Logger.log("Cloning repository git@github.com:#{config[:github_login]}/#{repository_id}.git - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
   end
+
 
   def Git.delete_local_testing_branch
     config = ConfigFile.read
