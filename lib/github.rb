@@ -34,6 +34,7 @@ module Github
       data[:base_sha] = pull_request.base.sha
       data[:base_branch] = pull_request.base.ref
       data[:status] = statuses.empty? ? 'undefined' : statuses.first.state
+      data[:last_checked] = Time.now.strftime("%Y-%m-%d %H:%M")
       data
     rescue => e
       Logger.log('Error when getting pull request', e)
@@ -44,7 +45,7 @@ module Github
 
   def Github.get_pull_request_comment(pull_request_id)
     begin
-      is_comment_valid = false
+     is_comment_valid = false
       config = ConfigFile.read
       repository_id = Repository.get_id
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
@@ -52,26 +53,27 @@ module Github
       
       #Go into the pull request and look at each comment.
       pull_request_comments.each do |pull_request_comment| 
-  
+	
         #if there is already a valid comment/user found no need to check the rest.
         break if is_comment_valid == true
-  
+	
         #Check to see if the user who commented on the pull request is liseted in the /config/config.yaml file
-        has_correct_user = false
-        has_correct_user = has_correct_user || pull_request_comment.user.login == config[:tester_username]
-  
+	     has_correct_user = false
+	     has_correct_user = has_correct_user || pull_request_comment.user.login == config[:tester_username]
+	
         #Check to see if the comment left by the user matches the set tester comment listed in the /config/config.yaml file
-        has_correct_comment = false
-        has_correct_comment = has_correct_comment || pull_request_comment.body == config[:tester_comment] 
+	     has_correct_comment = false
+	     has_correct_comment = has_correct_comment || pull_request_comment.body == config[:tester_comment] 
         
         #Check to see if the comment left was made after the last check.
-        has_correct_time = false
-        has_correct_time = has_correct_time || pull_request_comment.updated_at >= PullRequestsData.read[pull_request_id][:last_checked] unless PullRequestsData.read[pull_request_id].nil?
-  
+       new_date = DateTime.parse(pull_request_comment.updated_at)
+	     has_correct_time = false
+	     has_correct_time = has_correct_time || new_date.strftime("%Y-%m-%d %H:%M") >= PullRequestsData.read[pull_request_id][:last_checked] unless PullRequestsData.read[pull_request_id].nil?
+	
         #if all three conditions are met return true
         is_comment_valid = has_correct_user && has_correct_comment && has_correct_time
       end
-  return is_comment_valid
+	return is_comment_valid
     rescue => e
       Logger.log('Error when getting pull request comments', e)
       sleep 5
@@ -79,7 +81,7 @@ module Github
     end
   end
 
-  def Github.set_pull_request_status(pull_request_id, state)
+  def Github.set_pull_request_status(pull_request_id, state, job_id=0)
     begin
       config = ConfigFile.read
       repository_id = Repository.get_id
@@ -91,13 +93,14 @@ module Github
 
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       client.create_status(repository_id, head_sha, state[:status], opts)
+      Github.set_pull_request_comment(pull_request_id,state[:status], job_id) if state[:status] !=  'pending' 
     rescue => e
       Logger.log('Error when setting pull request status', e)
       sleep 5
       retry
     end
   end
-
+  
   def Github.set_pull_request_comment(pull_request_id, state_status, job_id)
     begin
       config = ConfigFile.read
@@ -105,7 +108,7 @@ module Github
       jenkins_status = Jenkins.get_job_state(job_id)
       build_id = jenkins_status[:url].split('/').last
       comment = "Jenkins build has completed with a status of #{state_status}. [Build # #{build_id}](#{jenkins_status[:url]})" 
-        
+      	
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       client.add_comment(repository_id, pull_request_id, comment)
     rescue => e
