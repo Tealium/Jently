@@ -23,6 +23,7 @@ module Github
       repository_id = Repository.get_id
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       pull_request = client.pull_request(repository_id, pull_request_id)
+
       statuses = client.statuses(repository_id, pull_request.head.sha)
 
       data = {}
@@ -31,10 +32,13 @@ module Github
       data[:mergeable] = pull_request.mergeable
       data[:head_sha] = pull_request.head.sha
       data[:head_branch] = pull_request.head.ref
+      data[:head_url] = pull_request.head.repo.ssh_url
       data[:base_sha] = pull_request.base.sha
       data[:base_branch] = pull_request.base.ref
       data[:status] = statuses.empty? ? 'undefined' : statuses.first.state
       data[:last_checked] = Time.now.strftime("%Y-%m-%d %H:%M")
+      data[:head_fork] = pull_request.head.repo.fork
+      data[:base_fork] = pull_request.base.repo.fork
       data
     rescue => e
       Logger.log('Error when getting pull request', e)
@@ -58,12 +62,18 @@ module Github
         break if is_comment_valid == true
 	
         #Check to see if the user who commented on the pull request is liseted in the /config/config.yaml file
-	     has_correct_user = false
-	     has_correct_user = has_correct_user || pull_request_comment.user.login == config[:tester_username]
-	
+       has_correct_user = false
+       config[:tester_username].each do |username|
+          break if has_correct_user == true
+          has_correct_user = has_correct_user || pull_request_comment.user.login == username
+       end
+
         #Check to see if the comment left by the user matches the set tester comment listed in the /config/config.yaml file
-	     has_correct_comment = false
-	     has_correct_comment = has_correct_comment || pull_request_comment.body == config[:tester_comment] 
+        has_correct_comment = false
+        config[:tester_comment].each do |comment|
+          break if has_correct_comment == true
+          has_correct_comment = has_correct_comment || pull_request_comment.body == comment
+       end
         
         #Check to see if the comment left was made after the last check.
        new_date = DateTime.parse(pull_request_comment.updated_at)

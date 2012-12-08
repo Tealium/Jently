@@ -15,11 +15,11 @@ module Git
     repository_dir = Repository.get_dir
     cmd = <<-GIT
       cd #{repository_dir} &&
-      #{admin} git clone git@github.com:#{repository_id}.git
+      #{admin} git clone --recursive git@github.com:#{repository_id}.git
     GIT
     puts 'Cloning repository ...'
     status, stdout, stderr = systemu(cmd)
-    Logger.log("Cloning repository git@github.com:#{config[:github_login]}/#{repository_id}.git - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
+    Logger.log("Cloning base repository git@github.com:#{config[:github_login]}/#{repository_id}.git - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
   end
 
 
@@ -30,12 +30,13 @@ module Git
     cmd = <<-GIT
       cd #{repository_path} &&
       #{admin} git reset --hard &&
+      #{admin} git remote rm #{config[:remote_name]}
       #{admin} git clean -df &&
       #{admin} git checkout master &&
       #{admin} git branch -D #{config[:testing_branch_name]}
     GIT
     status, stdout, stderr = systemu(cmd)
-    Logger.log("Deleting local testing branch - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
+    Logger.log("Deleting local testing branch #{config[:testing_branch_name]} - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
   end
 
   def Git.delete_remote_testing_branch
@@ -50,13 +51,28 @@ module Git
       #{admin} git push origin :#{config[:testing_branch_name]}
     GIT
     status, stdout, stderr = systemu(cmd)
-    Logger.log("Deleting remote testing branch - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
+    Logger.log("Deleting remote testing branch #{config[:testing_branch_name]} - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
   end
 
   def Git.create_local_testing_branch(pull_request)
     config = ConfigFile.read
     admin = Git.admin
     repository_path = Repository.get_path
+    if pull_request[:head_fork] = true 
+    cmd = <<-GIT
+      cd #{repository_path} &&
+      #{admin} git reset --hard &&
+      #{admin} git clean -df &&
+      #{admin} git remote add #{config[:remote_name]} #{pull_request[:head_url]} &&
+      #{admin} git remote update &&
+      #{admin} git fetch --all &&
+      #{admin} git checkout #{config[:remote_name]}/#{pull_request[:head_branch]} &&
+      #{admin} git reset --hard #{config[:remote_name]}/#{pull_request[:head_branch]} &&
+      #{admin} git clean -df &&
+      #{admin} git checkout -b #{config[:testing_branch_name]} &&
+      #{admin} git pull origin #{pull_request[:base_branch]}
+    GIT
+  else
     cmd = <<-GIT
       cd #{repository_path} &&
       #{admin} git reset --hard &&
@@ -68,8 +84,9 @@ module Git
       #{admin} git checkout -b #{config[:testing_branch_name]} &&
       #{admin} git pull origin #{pull_request[:base_branch]}
     GIT
+  end
     status, stdout, stderr = systemu(cmd)
-    Logger.log("Creating local testing branch - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
+    Logger.log("Creating local testing branch #{config[:testing_branch_name]} - status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
   end
 
   def Git.push_local_testing_branch_to_remote
