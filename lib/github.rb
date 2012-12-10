@@ -70,10 +70,7 @@ module Github
 
         #Check to see if the comment left by the user matches the set tester comment listed in the /config/config.yaml file
         has_correct_comment = false
-        config[:tester_comment].each do |comment|
-          break if has_correct_comment == true
-          has_correct_comment = has_correct_comment || pull_request_comment.body == comment
-       end
+        has_correct_comment = has_correct_comment || pull_request_comment.body == config[:tester_comment]
         
         #Check to see if the comment left was made after the last check.
        new_date = DateTime.parse(pull_request_comment.updated_at)
