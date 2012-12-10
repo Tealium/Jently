@@ -101,6 +101,6 @@ module PullRequestsData
     comment_valid = false
     comment_valid = comment_valid || pull_request[:status] != 'pending' && is_comment_valid
 
-    is_test_required = !is_merged && (is_new || has_invalid_status || comment_valid || (has_valid_status && was_updated))
+    is_test_required = !is_merged && (is_new || has_invalid_status || comment_valid || has_valid_status)
   end
 end
