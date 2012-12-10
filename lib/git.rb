@@ -30,9 +30,9 @@ module Git
     cmd = <<-GIT
       cd #{repository_path} &&
       #{admin} git reset --hard &&
-      #{admin} git remote rm #{config[:remote_name]}
+      #{admin} git remote rm #{config[:remote_name]} &&
       #{admin} git clean -df &&
-      #{admin} git checkout master &&
+      #{admin} git checkout origin master &&
       #{admin} git branch -D #{config[:testing_branch_name]}
     GIT
     status, stdout, stderr = systemu(cmd)
@@ -65,12 +65,9 @@ module Git
       #{admin} git clean -df &&
       #{admin} git remote add #{config[:remote_name]} #{pull_request[:head_url]} &&
       #{admin} git remote update &&
-      #{admin} git fetch --all &&
-      #{admin} git checkout #{config[:remote_name]}/#{pull_request[:head_branch]} &&
-      #{admin} git reset --hard #{config[:remote_name]}/#{pull_request[:head_branch]} &&
-      #{admin} git clean -df &&
+      #{admin} git pull origin #{pull_request[:base_branch]}&&
       #{admin} git checkout -b #{config[:testing_branch_name]} &&
-      #{admin} git pull origin #{pull_request[:base_branch]}
+      #{admin} git pull #{config[:remote_name]} #{pull_request[:head_branch]}
     GIT
   else
     cmd = <<-GIT
