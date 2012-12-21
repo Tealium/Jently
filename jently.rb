@@ -23,6 +23,13 @@ def test_pull_request(pull_request_id)
       end
 
       if pull_request[:mergeable] == true
+        thr = Thread.new do
+          Github.set_pull_request_status(pull_request_id, {:status => 'pending', :description => 'Jenkins has started to work on pull request.'})
+          job_id = Jenkins.start_job
+          state = Jenkins.wait_on_job(job_id)
+          Github.set_pull_request_status(pull_request_id, state, job_id)
+        end
+
         Git.clone_repository if !Repository.exists_locally
         #Git.delete_local_testing_branch
         #Git.delete_remote_testing_branch
@@ -31,15 +38,8 @@ def test_pull_request(pull_request_id)
 
         Jenkins.wait_for_idle_executor
 
-        thr = Thread.new do
-          Github.set_pull_request_status(pull_request_id, {:status => 'pending', :description => 'Started work on pull request.'})
-          job_id = Jenkins.start_job
-          state = Jenkins.wait_on_job(job_id)
-          Github.set_pull_request_status(pull_request_id, state, job_id)
-        end
-
         timeout = thr.join(config[:jenkins_job_timeout_seconds]).nil?
-        Github.set_pull_request_status(pull_request_id, {:status => 'error', :description => 'Job timed out.'}) if timeout
+        Github.set_pull_request_status(pull_request_id, {:status => 'error', :description => 'Jenkins job timed out.'}) if timeout
       end
     end
   rescue => e

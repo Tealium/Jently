@@ -88,19 +88,8 @@ module PullRequestsData
     has_valid_status = false
     has_valid_status = has_valid_status || pull_request[:status] == 'success'
     has_valid_status = has_valid_status || pull_request[:status] == 'failure'
+    has_valid_status = has_valid_status || pull_request[:status] == 'undefined'
 
-    has_invalid_status = false
-    has_invalid_status = has_invalid_status || pull_request[:status] == 'error'
-    has_invalid_status = has_invalid_status || pull_request[:status] == 'pending'
-    has_invalid_status = has_invalid_status || pull_request[:status] == 'undefined'
-
-    was_updated = false
-    was_updated = (was_updated || data[pull_request[:id]][:head_sha] != pull_request[:head_sha]) if !is_new
-    was_updated = (was_updated || data[pull_request[:id]][:base_sha] != pull_request[:base_sha]) if !is_new
-    
-    comment_valid = false
-    comment_valid = comment_valid || pull_request[:status] != 'pending' && is_comment_valid
-
-    is_test_required = !is_merged && (is_new || has_invalid_status || comment_valid || has_valid_status)
+    is_test_required = !is_merged && (is_comment_valid && has_valid_status)
   end
 end
