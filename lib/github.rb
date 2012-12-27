@@ -23,21 +23,23 @@ module Github
       repository_id = Repository.get_id
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       pull_request = client.pull_request(repository_id, pull_request_id)
-
       statuses = client.statuses(repository_id, pull_request.head.sha)
 
       data = {}
       data[:id] = pull_request.number
       data[:merged] = pull_request.merged
       data[:mergeable] = pull_request.mergeable
-      data[:head_sha] = pull_request.head.sha
       data[:head_branch] = pull_request.head.ref
+      data[:head_sha] = pull_request.head.sha
       data[:head_url] = pull_request.head.repo.ssh_url
-      data[:base_sha] = pull_request.base.sha
-      data[:base_branch] = pull_request.base.ref
-      data[:status] = statuses.empty? ? 'undefined' : statuses.first.state
-      data[:last_checked] = Time.now.strftime("%Y-%m-%d %H:%M")
       data[:head_fork] = pull_request.head.repo.fork
+      data[:last_checked] = Time.now.strftime("%Y-%m-%d %H:%M")
+      data[:status] = statuses.empty? ? 'undefined' : statuses.first.state
+
+      # Update base_sha separately. The pull_request call is
+      # not guaranteed to return the last sha of the base branch.
+      data[:base_branch] = pull_request.base.ref    
+      data[:base_sha] = client.commits(repository_id, data[:base_branch]).first.sha
       data[:base_fork] = pull_request.base.repo.fork
       data
     rescue => e
