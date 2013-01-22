@@ -40,6 +40,8 @@ def test_pull_request(pull_request_id)
 
         timeout = thr.join(config[:jenkins_job_timeout_seconds]).nil?
         Github.set_pull_request_status(pull_request_id, {:status => 'error', :description => 'Jenkins job timed out.'}) if timeout
+        pull_request = Github.get_pull_request(pull_request_id)
+        PullRequestsData.update(pull_request)
       end
     end
   rescue => e
