@@ -58,7 +58,7 @@ module Git
     config = ConfigFile.read
     admin = Git.admin
     repository_path = Repository.get_path
-    if pull_request[:head_fork] = true 
+    if pull_request[:head_fork] == true 
     cmd = <<-GIT
       cd #{repository_path} &&
       #{admin} git reset --hard &&
