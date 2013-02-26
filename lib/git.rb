@@ -65,7 +65,7 @@ module Git
       #{admin} git remote rm #{config[:remote_name]} &&
       #{admin} git clean -df &&
       #{admin} git checkout master &&
-      #{admin} git branch -D #{config[:testing_branch_name]}
+      #{admin} git branch -D #{config[:testing_branch_name]} &&
       #{admin} git remote add #{config[:remote_name]} #{pull_request[:head_url]} &&
       #{admin} git remote update &&
       #{admin} git pull origin #{pull_request[:base_branch]}&&
