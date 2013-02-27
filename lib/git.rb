@@ -59,8 +59,11 @@ module Git
     admin = Git.admin
     repository_path = Repository.get_path
     if pull_request[:head_fork] == true 
+    puts 'Updating repository to pull request branch'
     cmd = <<-GIT
       cd #{repository_path} &&
+               git config --global user.email "tealium-devopsbot@tealium.com" &&
+               git config --global user.name "Jenkins Bot" &&
       #{admin} git reset --hard &&
       #{admin} git remote rm #{config[:remote_name]} &&
       #{admin} git clean -df &&
