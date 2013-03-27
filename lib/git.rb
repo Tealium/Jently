@@ -59,7 +59,7 @@ module Git
     GIT
   end
     status, stdout, stderr = systemu(cmd)
-    Logger.log("Creating local testing branch #{config[:testing_branch_name]}. For user: #{config[:remote_name]} and under the branch:#{pull_request[:head_branch]}. status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
+    Logger.log("Creating local testing branch #{config[:testing_branch_name]}. For user: #{pull_request[:head_url]} and under the branch:#{pull_request[:head_branch]}. status: #{status} - stdout: #{stdout} - stderr: #{stderr}")
   end
 
 #The code below is not used.
