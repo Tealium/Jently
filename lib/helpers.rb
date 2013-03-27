@@ -89,6 +89,7 @@ module PullRequestsData
     has_valid_status = has_valid_status || pull_request[:status] == 'success'
     has_valid_status = has_valid_status || pull_request[:status] == 'failure'
     has_valid_status = has_valid_status || pull_request[:status] == 'undefined'
+    has_valid_status = has_valid_status || pull_request[:status] == 'pending'
 
     is_test_required = !is_merged && (is_comment_valid && has_valid_status)
   end
