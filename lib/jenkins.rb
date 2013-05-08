@@ -38,7 +38,7 @@ module Jenkins
     end
   end
 
-  def Jenkins.start_job(jenkins_job_name)
+  def Jenkins.start_job(jenkins_job_name, pull_request_id)
     begin
       config = ConfigFile.read
       connection = Faraday.new(:url => "#{config[:jenkins_url]}/job/#{jenkins_job_name}/buildWithParameters") do |c|
@@ -54,9 +54,9 @@ module Jenkins
       job_id = (Time.now.to_f * 1000000).to_i.to_s
       connection.get do |req|
         req.params[:id]           = job_id
-        req.params[:branch]       = config[:head_branch]
-        req.params[:repository]   = config[:head_url]
-        req.params[:base_branch]  = config[:base_branch]
+        req.params[:branch]       = PullRequestsData.read[pull_request_id][:head_branch]
+        req.params[:repository]   = PullRequestsData.read[pull_request_id][:head_url]
+        req.params[:base_branch]  = PullRequestsData.read[pull_request_id][:base_branch]
       end
       Logger.log("This is the branch and pull request tested - #{config[:head_branch]} - #{config[:head_url]} - #{config[:base_branch]}")
       job_id
