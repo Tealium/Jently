@@ -94,7 +94,7 @@ module Github
     end
   end
 
-  def Github.set_pull_request_status(pull_request_id, state, job_id=0)
+  def Github.set_pull_request_status(pull_request_id, state, job_id=0, jenkins_job_name="")
     begin
       config = ConfigFile.read
       repository_id = Repository.get_id
@@ -106,7 +106,7 @@ module Github
 
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       client.create_status(repository_id, head_sha, state[:status], opts)
-      Github.set_pull_request_comment(pull_request_id,state[:status], job_id) if state[:status] !=  'pending'
+      Github.set_pull_request_comment(pull_request_id,state[:status], job_id, jenkins_job_name) if state[:status] !=  'pending'
     rescue => e
       Logger.log('Error when setting pull request status', e)
       sleep 5
@@ -114,14 +114,14 @@ module Github
     end
   end
   
-  def Github.set_pull_request_comment(pull_request_id, state_status, job_id)
+  def Github.set_pull_request_comment(pull_request_id, state_status, job_id, jenkins_job_name)
     begin
       config = ConfigFile.read
       repository_id = Repository.get_id
       if state_status == 'falure' and job_id == 0
         comment = "Jenkins cannot test because the pull request has merge conflicts."
       else
-        jenkins_status = Jenkins.get_job_state(job_id)
+        jenkins_status = Jenkins.get_job_state(job_id, jenkins_job_name)
         build_id = jenkins_status[:url].split('/').last
         comment = "Jenkins build has completed with a status of #{state_status}. [Build # #{build_id}](#{jenkins_status[:url]})" 
       end

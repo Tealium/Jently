@@ -14,27 +14,27 @@ def test_pull_request(pull_request_id)
 
     if is_test_required && is_comment_valid 
       if pull_request[:mergeable] == false
-        Github.set_pull_request_status(pull_request_id, {:status => 'failure', :description => 'Jenkins cannot test because the pull request is unmergeable.'})
+        Github.set_pull_request_status(pull_request_id, {:status => 'failure', :description => 'Jenkins cannot test because the pull request is unmergeable.'}, jenkins_job_name)
       end
 
       if pull_request[:mergeable] == true
         thr = Thread.new do
-          Github.set_pull_request_status(pull_request_id, {:status => 'pending', :description => 'Jenkins has started to work on your pull request.'})
+          Github.set_pull_request_status(pull_request_id, {:status => 'pending', :description => 'Jenkins has started to work on your pull request.'}, jenkins_job_name)
           job_id = Jenkins.start_job(jenkins_job_name, pull_request_id)
           state = Jenkins.wait_on_job(job_id, jenkins_job_name)
-          Github.set_pull_request_status(pull_request_id, state, job_id)
+          Github.set_pull_request_status(pull_request_id, state, job_id, jenkins_job_name)
         end
 
         Jenkins.wait_for_idle_executor
 
         timeout = thr.join(config[:jenkins_job_timeout_seconds]).nil?
-        Github.set_pull_request_status(pull_request_id, {:status => 'error', :description => 'Jenkins job has timed out.'}) if timeout
+        Github.set_pull_request_status(pull_request_id, {:status => 'error', :description => 'Jenkins job has timed out.'}, jenkins_job_name) if timeout
         pull_request = Github.get_pull_request(pull_request_id)
         PullRequestsData.update(pull_request)
       end
     end
   rescue => e
-   Github.set_pull_request_status(pull_request_id, {:status => 'error'}) 
+   Github.set_pull_request_status(pull_request_id, {:status => 'error'}, jenkins_job_name) 
     Logger.log('Error when testing pull request', e)
   end
 end
