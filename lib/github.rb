@@ -69,7 +69,6 @@ module Github
        has_correct_comment = false
         config[:testers].each do |tester, values|
           #Check to see if the comment left by the user matches the set tester comment listed in the /config/config.yaml file
-         binding.pry
           has_correct_comment = has_correct_comment || pull_request_comment.body.downcase == values[:tester_comment].downcase
 
           values[:tester_username].each do |username|
