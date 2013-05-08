@@ -58,7 +58,7 @@ module Jenkins
         req.params[:repository]   = PullRequestsData.read[pull_request_id][:head_url]
         req.params[:base_branch]  = PullRequestsData.read[pull_request_id][:base_branch]
       end
-      Logger.log("This is the branch and pull request tested - #{config[:head_branch]} - #{config[:head_url]} - #{config[:base_branch]}")
+      Logger.log("This is the branch and pull request tested - #{PullRequestsData.read[pull_request_id][:head_branch]} - #{PullRequestsData.read[pull_request_id][:head_url]} - #{PullRequestsData.read[pull_request_id][:base_branch]}")
       job_id
     rescue => e
       Logger.log('Error when starting job', e)
