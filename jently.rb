@@ -8,12 +8,7 @@ def test_pull_request(pull_request_id)
   begin
     config = ConfigFile.read
     pull_request = Github.get_pull_request(pull_request_id)
-    #Uncomment the line below if you want to trigger a build from a 
-    #when a specific pull request comment is made on open pull requests.
-    is_comment_valid = Github.get_pull_request_comment(pull_request_id)
-    #Uncomment the line below and comment out the line above if you want to 
-    #trigger a build when a pull request is created.
-    #is_comment_valid = 'true'
+    is_comment_valid, jenkins_job_name = Github.get_pull_request_comment(pull_request_id)
     is_test_required = PullRequestsData.is_test_required(pull_request, is_comment_valid)
     PullRequestsData.update(pull_request)
 
@@ -25,14 +20,10 @@ def test_pull_request(pull_request_id)
       if pull_request[:mergeable] == true
         thr = Thread.new do
           Github.set_pull_request_status(pull_request_id, {:status => 'pending', :description => 'Jenkins has started to work on your pull request.'})
-          job_id = Jenkins.start_job
+          job_id = Jenkins.start_job(jenkins_job_name)
           state = Jenkins.wait_on_job(job_id)
           Github.set_pull_request_status(pull_request_id, state, job_id)
         end
-
-        Git.clone_repository if !Repository.exists_locally
-        
-        Git.create_local_testing_branch(pull_request)
 
         Jenkins.wait_for_idle_executor
 
@@ -43,7 +34,7 @@ def test_pull_request(pull_request_id)
       end
     end
   rescue => e
-    Github.set_pull_request_status(pull_request_id, {:status => 'error'})
+   Github.set_pull_request_status(pull_request_id, {:status => 'error'}) 
     Logger.log('Error when testing pull request', e)
   end
 end

@@ -38,10 +38,10 @@ module Jenkins
     end
   end
 
-  def Jenkins.start_job
+  def Jenkins.start_job(jenkins_job_name)
     begin
       config = ConfigFile.read
-      connection = Faraday.new(:url => "#{config[:jenkins_url]}/job/#{config[:jenkins_job_name]}/buildWithParameters") do |c|
+      connection = Faraday.new(:url => "#{config[:jenkins_url]}/job/#{jenkins_job_name}/buildWithParameters") do |c|
         c.use Faraday::Request::UrlEncoded
         c.use FaradayMiddleware::FollowRedirects
         c.use Faraday::Adapter::NetHttp
@@ -53,9 +53,10 @@ module Jenkins
 
       job_id = (Time.now.to_f * 1000000).to_i.to_s
       connection.get do |req|
-        req.params[:id] = job_id
-        req.params[:branch] = config[:testing_branch_name]
-        req.params[:repository] = config[:github_ssh_repository]
+        req.params[:id]           = job_id
+        req.params[:branch]       = config[:head_branch]
+        req.params[:repository]   = config[:head_url]
+        req.params[:base_branch]  = config[:base_branch]
       end
       job_id
     rescue => e

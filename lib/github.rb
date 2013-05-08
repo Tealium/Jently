@@ -65,14 +65,17 @@ module Github
 	
         #Check to see if the user who commented on the pull request is liseted in the /config/config.yaml file
        has_correct_user = false
-       config[:tester_username].each do |username|
-          break if has_correct_user == true
-          has_correct_user = has_correct_user || pull_request_comment.user.login == username
-       end
+       has_correct_comment = false
+       config[:testers].each do |tester|
+          #Check to see if the comment left by the user matches the set tester comment listed in the /config/config.yaml file
+          has_correct_comment = has_correct_comment || pull_request_comment.body.downcase == tester[:tester_comment].downcase
 
-        #Check to see if the comment left by the user matches the set tester comment listed in the /config/config.yaml file
-        has_correct_comment = false
-        has_correct_comment = has_correct_comment || pull_request_comment.body.downcase == config[:tester_comment].downcase 
+          tester[:tester_username].each do |username|
+            has_correct_user = has_correct_user || pull_request_comment.user.login == username
+          end
+          jenkins_job_name = tester[:jenkins_job_name] if has_correct_user && has_correct_comment
+          break if has_correct_comment == true && has_correct_user == true
+        end
         
         #Check to see if the comment left was made after the last check.
        new_date = DateTime.parse(pull_request_comment.updated_at)
@@ -82,7 +85,7 @@ module Github
         #if all three conditions are met return true
         is_comment_valid = has_correct_user && has_correct_comment && has_correct_time
       end
-	return is_comment_valid
+	return is_comment_valid, jenkins_job_name
     rescue => e
       Logger.log('Error when getting pull request comments', e)
       sleep 5
@@ -102,7 +105,7 @@ module Github
 
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       client.create_status(repository_id, head_sha, state[:status], opts)
-      Github.set_pull_request_comment(pull_request_id,state[:status], job_id) if state[:status] !=  'pending' 
+      Github.set_pull_request_comment(pull_request_id,state[:status], job_id) if state[:status] !=  'pending'
     rescue => e
       Logger.log('Error when setting pull request status', e)
       sleep 5
@@ -114,10 +117,13 @@ module Github
     begin
       config = ConfigFile.read
       repository_id = Repository.get_id
-      jenkins_status = Jenkins.get_job_state(job_id)
-      build_id = jenkins_status[:url].split('/').last
-      comment = "Jenkins build has completed with a status of #{state_status}. [Build # #{build_id}](#{jenkins_status[:url]})" 
-      	
+      if state_status == 'falure' and job_id == 0
+        comment = "Jenkins cannot test because the pull request has merge conflicts."
+      else
+        jenkins_status = Jenkins.get_job_state(job_id)
+        build_id = jenkins_status[:url].split('/').last
+        comment = "Jenkins build has completed with a status of #{state_status}. [Build # #{build_id}](#{jenkins_status[:url]})" 
+      end
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       client.add_comment(repository_id, pull_request_id, comment)
     rescue => e
