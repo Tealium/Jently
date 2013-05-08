@@ -51,41 +51,43 @@ module Github
 
   def Github.get_pull_request_comment(pull_request_id)
     begin
-     is_comment_valid = false
+      is_comment_valid = false
+      jenkins_job_name = ""
       config = ConfigFile.read
       repository_id = Repository.get_id
       client = Octokit::Client.new(:login => config[:github_login], :password => config[:github_password])
       pull_request_comments = client.issue_comments(repository_id, pull_request_id)
-      
+
       #Go into the pull request and look at each comment.
-      pull_request_comments.each do |pull_request_comment| 
-	
+      pull_request_comments.each do |pull_request_comment|
+
         #if there is already a valid comment/user found no need to check the rest.
         break if is_comment_valid == true
-	
+
         #Check to see if the user who commented on the pull request is liseted in the /config/config.yaml file
        has_correct_user = false
        has_correct_comment = false
-       config[:testers].each do |tester|
+        config[:testers].each do |tester, values|
           #Check to see if the comment left by the user matches the set tester comment listed in the /config/config.yaml file
-          has_correct_comment = has_correct_comment || pull_request_comment.body.downcase == tester[:tester_comment].downcase
+         binding.pry
+          has_correct_comment = has_correct_comment || pull_request_comment.body.downcase == values[:tester_comment].downcase
 
-          tester[:tester_username].each do |username|
+          values[:tester_username].each do |username|
             has_correct_user = has_correct_user || pull_request_comment.user.login == username
           end
-          jenkins_job_name = tester[:jenkins_job_name] if has_correct_user && has_correct_comment
+          jenkins_job_name = values[:jenkins_job_name] if has_correct_user && has_correct_comment
           break if has_correct_comment == true && has_correct_user == true
         end
-        
+
         #Check to see if the comment left was made after the last check.
        new_date = DateTime.parse(pull_request_comment.updated_at)
-	     has_correct_time = false
-	     has_correct_time = has_correct_time || new_date.strftime("%Y-%m-%d %H:%M") >= PullRequestsData.read[pull_request_id][:last_checked] unless PullRequestsData.read[pull_request_id].nil?
-	
+             has_correct_time = false
+             has_correct_time = has_correct_time || new_date.strftime("%Y-%m-%d %H:%M") >= PullRequestsData.read[pull_request_id][:last_checked] unless PullRequestsData.read[pull_request_id].nil?
+
         #if all three conditions are met return true
         is_comment_valid = has_correct_user && has_correct_comment && has_correct_time
       end
-	return is_comment_valid, jenkins_job_name
+        return is_comment_valid, jenkins_job_name
     rescue => e
       Logger.log('Error when getting pull request comments', e)
       sleep 5
