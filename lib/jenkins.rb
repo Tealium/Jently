@@ -58,6 +58,7 @@ module Jenkins
         req.params[:repository]   = config[:head_url]
         req.params[:base_branch]  = config[:base_branch]
       end
+      Logger.log("This is the branch and pull request tested - #{config[:head_branch]} - #{config[:head_url]} - #{config[:base_branch]}")
       job_id
     rescue => e
       Logger.log('Error when starting job', e)
@@ -66,19 +67,19 @@ module Jenkins
     end
   end
 
-  def Jenkins.wait_on_job(job_id)
+  def Jenkins.wait_on_job(job_id, jenkins_job_name)
     config = ConfigFile.read
     while true
-      state = Jenkins.get_job_state(job_id)
+      state = Jenkins.get_job_state(job_id, jenkins_job_name)
       return state if !state.nil?
       sleep config[:jenkins_polling_interval_seconds]
     end
   end
 
-  def Jenkins.get_job_state(job_id)
+  def Jenkins.get_job_state(job_id, jenkins_job_name)
     begin
       config = ConfigFile.read
-      connection = Faraday.new(:url => "#{config[:jenkins_url]}/job/#{config[:jenkins_job_name]}/api/json") do |c|
+      connection = Faraday.new(:url => "#{config[:jenkins_url]}/job/#{jenkins_job_name}/api/json") do |c|
         c.use Faraday::Request::UrlEncoded
         c.use FaradayMiddleware::FollowRedirects
         c.use FaradayMiddleware::Mashify

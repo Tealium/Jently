@@ -21,7 +21,7 @@ def test_pull_request(pull_request_id)
         thr = Thread.new do
           Github.set_pull_request_status(pull_request_id, {:status => 'pending', :description => 'Jenkins has started to work on your pull request.'})
           job_id = Jenkins.start_job(jenkins_job_name)
-          state = Jenkins.wait_on_job(job_id)
+          state = Jenkins.wait_on_job(job_id, jenkins_job_name)
           Github.set_pull_request_status(pull_request_id, state, job_id)
         end
 
