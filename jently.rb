@@ -28,7 +28,7 @@ def test_pull_request(pull_request_id)
         Jenkins.wait_for_idle_executor
 
         timeout = thr.join(config[:jenkins_job_timeout_seconds]).nil?
-        Github.set_pull_request_status(pull_request_id, {:status => 'error', :description => 'Jenkins job has timed out.'}, jenkins_job_name) if timeout
+        Github.set_pull_request_status(pull_request_id, {:status => 'failure', :description => 'Jenkins job has timed out.'}, jenkins_job_name) if timeout
         pull_request = Github.get_pull_request(pull_request_id)
         PullRequestsData.update(pull_request)
       end
